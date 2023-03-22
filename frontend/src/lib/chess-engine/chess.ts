@@ -30,7 +30,6 @@ export default class Chess {
    * Switch current player && generate available moves
    */
   next() {
-    console.clear();
     this.current = Pieces.invertColor(this.current);
     this.generateMoves();
   }

@@ -1,20 +1,7 @@
-import Chess, {
-  type Board,
-  ChessBoards,
-  Coords,
-  Direction,
-  PieceColor,
-  Pieces,
-  PieceType,
-} from "$lib/chess-engine";
-
-// export enum MoveType {
-//   NORMAL,
-//   CHECK,
-//   CHECKMATE,
-//   STALEMATE,
-//   CAPTURE,
-// }
+import { type Board, ChessBoards } from "./board";
+import type Chess from "./chess";
+import { Coords, Direction } from "./coordinates";
+import { PieceColor, Pieces, PieceType } from "./piece";
 
 export interface Move {
   from: number;

@@ -9,3 +9,10 @@ export type Events =
   | "playerLeave"
   | "connection"
   | "move";
+
+export interface BasicMove {
+  from: number;
+  to: number;
+  // for promoting
+  becameTo?: number;
+}

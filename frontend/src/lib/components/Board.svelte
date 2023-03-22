@@ -1,6 +1,29 @@
 <script lang="ts">
-  import Chess, { PieceType, Rendering } from "$lib/chess-engine";
+  import type Chess from "$lib/chess-engine/chess";
+  import type { Move } from "$lib/chess-engine/move";
+  import { PieceType } from "$lib/chess-engine/piece";
+  import {
+    getOverlayColor,
+    getTileBackgroundColor,
+    twoDimensionalOffset,
+  } from "$lib/chess-engine/renderingHelpers";
+  import type { BasicMove } from "$lib/websocket/types";
+  import { createEventDispatcher } from "svelte";
+
+  interface ChessEvents {
+    move: BasicMove;
+  }
+
+  const dispatch = createEventDispatcher<ChessEvents>();
+
   export let chess: Chess;
+  chess.onMove = (move: Move) => {
+    dispatch("move", {
+      from: move.from,
+      to: move.to,
+      becameTo: move.promoteToType,
+    } satisfies BasicMove);
+  };
   let promoteOffset = -1;
   const promoteTypes = [
     [PieceType.QUEEN, PieceType.BISHOP],
@@ -9,7 +32,7 @@
 </script>
 
 <div class="board">
-  {#each Rendering.twoDimensionalOffset as row}
+  {#each twoDimensionalOffset as row}
     <div class="row">
       {#each row as offset}
         {#if offset === promoteOffset}
@@ -18,9 +41,7 @@
               <div class="promote">
                 {#each pRow as type}
                   <button
-                    style="background: {Rendering.getTileBackgroundColor(
-                      offset
-                    )};"
+                    style="background: {getTileBackgroundColor(offset)};"
                     on:click={() => {
                       chess.promoteLastMoveTo(type);
                       chess.next();
@@ -47,12 +68,12 @@
               chess = chess;
             }}
             class="cell"
-            style="background: {Rendering.getTileBackgroundColor(offset)};"
+            style="background: {getTileBackgroundColor(offset)};"
           >
             <!-- <p style="position: absolute;">{chess.board[offset].moved}</p> -->
             <div
               class="overlay"
-              style="background: {Rendering.getOverlayColor(offset, chess)};"
+              style="background: {getOverlayColor(offset, chess)};"
             >
               {#if chess.board[offset].type !== PieceType.NONE}
                 <img

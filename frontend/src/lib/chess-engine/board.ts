@@ -1,5 +1,5 @@
 import { Arrays } from "$lib/chess-engine/utils/arrays";
-import { type Piece, PieceColor, Pieces, PieceType } from "./";
+import { type Piece, PieceColor, Pieces, PieceType } from "./piece";
 
 export type Board = Piece[];
 

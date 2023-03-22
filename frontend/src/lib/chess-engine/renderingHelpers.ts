@@ -1,5 +1,7 @@
 import { Arrays } from "$lib/chess-engine/utils";
-import Chess, { ChessBoards, Coords } from "$lib/chess-engine";
+import { ChessBoards } from "./board";
+import type Chess from "./chess";
+import { Coords } from "./coordinates";
 
 const _2dOffset: number[][] = [];
 

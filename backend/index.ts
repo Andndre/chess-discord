@@ -3,7 +3,7 @@ import { Server, Socket } from "https://deno.land/x/socket_io@0.2.0/mod.ts";
 import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
 import "https://deno.land/std@0.180.0/dotenv/load.ts";
 
-import { Game } from "./interfaces.ts";
+import { Game, Move } from "./interfaces.ts";
 import { Errors, Events } from "./ws-types.ts";
 
 const app = new Application();
@@ -64,6 +64,9 @@ const connections = new Map<string, string>();
 
 const io = new Server({
   path: "/ws/",
+  cors: {
+    origin: "*",
+  },
 });
 
 // deno-lint-ignore no-explicit-any
@@ -75,6 +78,8 @@ function broadcast(wss: (Socket | undefined)[], event: Events, ...args: any[]) {
 
 io.on("connection", (socket) => {
   console.log(`socket ${socket.id} connected`);
+
+  socket.emit<Events>("connection", "Hello from server");
 
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);
@@ -135,6 +140,11 @@ io.on("connection", (socket) => {
       game.watchers.length,
       !game.white.ws || !game.black.ws,
     );
+  });
+
+  socket.on<Events>("move", (move: Move) => {
+    console.log(move);
+    // TODO: complete this
   });
 
   socket.on("disconnect", (reason) => {
