@@ -1,12 +1,12 @@
 // @deno-types="npm:@types/express"
 import express from "npm:express";
-
-import { AppCommandInteraction } from "./utils/types.ts";
-import { playWith } from "./slash/playwith.ts";
 import { InteractionType, verifyKeyMiddleware } from "npm:discord-interactions";
 
-import "https://deno.land/std@0.180.0/dotenv/load.ts";
+import type { AppCommandInteraction } from "./utils/types.ts";
+import { playWith } from "./slash/playwith.ts";
 import { ping } from "./slash/ping.ts";
+
+import "https://deno.land/std@0.180.0/dotenv/load.ts";
 
 const app = express();
 

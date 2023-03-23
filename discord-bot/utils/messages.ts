@@ -1,8 +1,9 @@
 import {
   InteractionResponseType,
-  MessageComponent,
+  type MessageComponent,
 } from "npm:discord-interactions";
-import { MyResponse } from "./types.ts";
+
+import type { MyResponse } from "./types.ts";
 
 export function sendChannelMessageText(
   res: MyResponse,

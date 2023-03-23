@@ -3,7 +3,7 @@ import {
   sendChannelMessageText,
 } from "../utils/messages.ts";
 
-import {
+import type {
   AppCommandInteraction,
   MyResponse,
   SlashCommandHandler,

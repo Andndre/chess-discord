@@ -1,4 +1,4 @@
-import {
+import type {
   AppCommandInteraction,
   MyResponse,
   SlashCommandHandler,

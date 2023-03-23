@@ -1,4 +1,4 @@
-import { InteractionResponseType } from "npm:discord-interactions";
+import type { InteractionResponseType } from "npm:discord-interactions";
 
 export interface AppCommandInteraction {
   app_permissions: string;

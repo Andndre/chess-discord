@@ -1,7 +1,7 @@
 import {
-  Button,
+  type Button,
   ButtonStyleTypes,
-  MessageComponent,
+  type MessageComponent,
   MessageComponentTypes,
 } from "npm:discord-interactions";
 
