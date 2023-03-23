@@ -79,7 +79,7 @@ function broadcast(wss: (Socket | undefined)[], event: Events, ...args: any[]) {
 io.on("connection", (socket) => {
   console.log(`socket ${socket.id} connected`);
 
-  socket.emit<Events>("connection", "Hello from server");
+  socket.emit<Events>("connection", "Hello from the local server");
 
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);

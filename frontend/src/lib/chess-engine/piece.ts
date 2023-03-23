@@ -16,15 +16,15 @@ export enum PieceColor {
   BLACK,
 }
 
-export enum PieceScore {
-  NONE,
-  PAWN = 1,
-  KNIGHT = 3,
-  BISHOP = 3,
-  ROOK = 5,
-  QUEEN = 9,
-  KING = Infinity,
-}
+// export enum PieceScore {
+//   NONE,
+//   PAWN = 1,
+//   KNIGHT = 3,
+//   BISHOP = 3,
+//   ROOK = 5,
+//   QUEEN = 9,
+//   KING = Infinity,
+// }
 
 export enum PieceType {
   PAWN,

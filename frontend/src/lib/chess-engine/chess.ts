@@ -5,6 +5,41 @@ import { PieceColor, Pieces, PieceType } from "./piece";
 
 export type GameOverReason = "" | "checkMate" | "staleMate";
 
+export interface ChessProps {
+  /**
+   * Usefull when implementing a multiplayer chess game -
+   * This will prevent user action on selecting or moving
+   * other player's piece
+   *
+   * For black:
+   * ```ts
+   * freezeOn = [PieceColor.WHITE]
+   * ```
+   *
+   * For white:
+   * ```ts
+   * freezeOn = [PieceColor.BLACK]
+   * ```
+   *
+   * For watcher (cannot move):
+   * ```ts
+   * freezeOn = [PieceColor.WHITE, PieceColor.BLACK]
+   * ```
+   *
+   * For simulating other player's move, you can use the
+   * `simulateClicksToMove` function that will require you
+   * to pass in
+   * `{from: number, to: number, promoteTo?: PieceType}`
+   */
+  freezeOn?: PieceColor[];
+  onGameOver?: (reason: GameOverReason) => void;
+  onMove?: (move: Move) => void;
+  onCastle?: (move: Move) => void;
+  onCapture?: (move: Move) => void;
+  onEnpassant?: (move: Move) => void;
+  onUndo?: (move: Move) => void;
+}
+
 export default class Chess {
   board: Board;
   validMoves: Move[][] = [];
@@ -13,23 +48,41 @@ export default class Chess {
   current: PieceColor = PieceColor.WHITE;
   gameOver = false;
   gameOverReason: GameOverReason = "";
-  onGameOver: (reason: GameOverReason) => void = () => {};
-  onMove: (move: Move) => void = () => {};
-  onCastle: (move: Move) => void = () => {};
-  onCapture: (move: Move) => void = () => {};
-  onEnpassant: (move: Move) => void = () => {};
-  onUndo: () => void = () => {};
+  freezeOn: PieceColor[] = [];
+  onGameOver: (reason: GameOverReason) => void;
+  onMove: (move: Move) => void;
+  onCastle: (move: Move) => void;
+  onCapture: (move: Move) => void;
+  onEnpassant: (move: Move) => void;
+  onUndo: (move: Move) => void;
 
-  constructor() {
+  constructor(
+    { freezeOn, onCapture, onCastle, onEnpassant, onGameOver, onMove, onUndo }:
+      ChessProps,
+  ) {
     this.board = ChessBoards.emptyBoard();
     ChessBoards.initPosition(this.board);
     this.generateMoves();
+    this.freezeOn = freezeOn || [];
+    const _onmove = () => {};
+    const _onundo = () => {};
+    const _oncapture = () => {};
+    const _oncastle = () => {};
+    const _onenpassant = () => {};
+    const _ongameover = () => {};
+    this.onMove = onMove || _onmove;
+    this.onUndo = onUndo || _onundo;
+    this.onCapture = onCapture || _oncapture;
+    this.onCastle = onCastle || _oncastle;
+    this.onEnpassant = onEnpassant || _onenpassant;
+    this.onGameOver = onGameOver || _ongameover;
   }
 
   /**
    * Switch current player && generate available moves
    */
   next() {
+    this.onMove(this.getLastMove()!);
     this.current = Pieces.invertColor(this.current);
     this.generateMoves();
   }
@@ -61,11 +114,12 @@ export default class Chess {
   }
 
   /**
-   * Perform `select`, `move`, or `deselect`
+   * Perform `select`, `move`, or `deselect` automatically
    *
    * @param offset
    */
-  clickTile(offset: number) {
+  clickTile(offset: number, force: boolean = false) {
+    if (!force && this.freezeOn.includes(this.current)) return "frozen";
     const isFriendly = this.board[offset].color === this.current;
     if (isFriendly) {
       // select
@@ -82,10 +136,39 @@ export default class Chess {
       this.move(move);
       this.selectedOffset = -1;
       return "move";
-    } else {
-      // deselect
-      this.selectedOffset = -1;
-      return "deselect";
+    }
+    // deselect
+    this.selectedOffset = -1;
+
+    return "deselect";
+  }
+
+  /**
+   * @param from first click
+   * @param to second click
+   * @param promoteTo third click (if promoting)
+   *
+   * @throws Error when the move performed was invalid
+   */
+  simulateClicksToMove(from: number, to: number, promoteTo?: PieceType) {
+    if (
+      !this.validMoves[from].find((move) => move.to === to)
+    ) {
+      throw new Error(
+        "The move cannot be performed because the move was invalid",
+      );
+    }
+
+    this.clickTile(from, true);
+    this.clickTile(to, true);
+    if (promoteTo) {
+      if (!this.isPromote()) {
+        this.undo();
+        throw new Error(
+          "The move cannot be performed because the move was not supposed to be a promoting move",
+        );
+      }
+      this.promoteLastMoveTo(promoteTo);
     }
   }
 
@@ -100,10 +183,15 @@ export default class Chess {
     return Arrays.last(this.moveHistory);
   }
 
+  lastMoveColor() {
+    const lastMove = this.getLastMove();
+    if (!lastMove) return null;
+    return this.board[lastMove.to].color;
+  }
+
   move(move: Move) {
     this.moveHistory.push(move);
     const { capture, castle, enPassant } = Moves.move(this.board, move);
-    this.onMove(move);
     if (capture) this.onCapture(move);
     if (castle) this.onCastle(move);
     if (enPassant) this.onEnpassant(move);
@@ -113,7 +201,7 @@ export default class Chess {
     const move = this.moveHistory.pop();
     if (!move) return;
     Moves.undoMove(this.board, move);
-    this.onUndo();
+    this.onUndo(move);
     this.next();
   }
 }

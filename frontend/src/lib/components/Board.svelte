@@ -1,29 +1,12 @@
 <script lang="ts">
-  import type Chess from "$lib/chess-engine/chess";
-  import type { Move } from "$lib/chess-engine/move";
   import { PieceType } from "$lib/chess-engine/piece";
-  import {
-    getOverlayColor,
-    getTileBackgroundColor,
-    twoDimensionalOffset,
-  } from "$lib/chess-engine/renderingHelpers";
-  import type { BasicMove } from "$lib/websocket/types";
-  import { createEventDispatcher } from "svelte";
+  import type Chess from "$lib/chess-engine/chess";
+  import * as Rendering from "$lib/chess-engine/renderingHelpers";
 
-  interface ChessEvents {
-    move: BasicMove;
-  }
-
-  const dispatch = createEventDispatcher<ChessEvents>();
-
+  // external
   export let chess: Chess;
-  chess.onMove = (move: Move) => {
-    dispatch("move", {
-      from: move.from,
-      to: move.to,
-      becameTo: move.promoteToType,
-    } satisfies BasicMove);
-  };
+
+  // internal
   let promoteOffset = -1;
   const promoteTypes = [
     [PieceType.QUEEN, PieceType.BISHOP],
@@ -31,68 +14,79 @@
   ];
 </script>
 
-<div class="board">
-  {#each twoDimensionalOffset as row}
-    <div class="row">
-      {#each row as offset}
-        {#if offset === promoteOffset}
-          <div class="cell">
-            {#each promoteTypes as pRow}
-              <div class="promote">
-                {#each pRow as type}
-                  <button
-                    style="background: {getTileBackgroundColor(offset)};"
-                    on:click={() => {
-                      chess.promoteLastMoveTo(type);
-                      chess.next();
-                      promoteOffset = -1;
-                      chess = chess;
-                    }}
-                  >
-                    <img src="/{type}{chess.current}.png" alt="piece" />
-                  </button>
-                {/each}
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <button
-            on:click={() => {
-              if (chess.clickTile(offset) === "move") {
-                if (chess.isPromote()) {
-                  promoteOffset = offset;
-                } else {
-                  chess.next();
-                }
-              }
-              chess = chess;
-            }}
-            class="cell"
-            style="background: {getTileBackgroundColor(offset)};"
-          >
-            <!-- <p style="position: absolute;">{chess.board[offset].moved}</p> -->
-            <div
-              class="overlay"
-              style="background: {getOverlayColor(offset, chess)};"
-            >
-              {#if chess.board[offset].type !== PieceType.NONE}
-                <img
-                  src="/{chess.board[offset].type}{chess.board[offset]
-                    .color}.png"
-                  alt="piece"
-                />
-              {/if}
+<div class="container">
+  <div class="board">
+    {#each Rendering.twoDimensionalOffset as row}
+      <div class="row">
+        {#each row as offset}
+          {#if offset === promoteOffset}
+            <div class="cell">
+              {#each promoteTypes as pRow}
+                <div class="promote">
+                  {#each pRow as type}
+                    <button
+                      style="background: {Rendering.getTileBackgroundColor(
+                        offset
+                      )};"
+                      on:click={() => {
+                        chess.promoteLastMoveTo(type);
+                        chess.next();
+                        promoteOffset = -1;
+                        chess = chess;
+                      }}
+                    >
+                      <img src="/{type}{chess.current}.png" alt="piece" />
+                    </button>
+                  {/each}
+                </div>
+              {/each}
             </div>
-          </button>
-        {/if}
-      {/each}
-    </div>
-  {/each}
+          {:else}
+            <button
+              on:click={() => {
+                if (chess.clickTile(offset) === "move") {
+                  if (chess.isPromote()) {
+                    promoteOffset = offset;
+                  } else {
+                    chess.next();
+                  }
+                }
+                chess = chess;
+              }}
+              class="cell"
+              style="background: {Rendering.getTileBackgroundColor(offset)};"
+            >
+              <div
+                class="overlay"
+                style="background: {Rendering.getOverlayColor(offset, chess)};"
+              >
+                {#if chess.board[offset].type !== PieceType.NONE}
+                  <img
+                    src="/{chess.board[offset].type}{chess.board[offset]
+                      .color}.png"
+                    alt="piece"
+                  />
+                {/if}
+              </div>
+            </button>
+          {/if}
+        {/each}
+      </div>
+    {/each}
+  </div>
 </div>
 
 <style>
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
   .board {
-    width: 100%;
+    max-width: 600px;
+    width: calc(min(95vw, 95vh));
     aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
@@ -105,19 +99,19 @@
   }
 
   .cell .promote {
-    /* position: relative; */
     display: flex;
     flex-direction: column;
     flex: 1;
     width: 100%;
-    height: 50%;
+    height: 100%;
   }
 
   .cell .promote button {
     aspect-ratio: 1 / 1;
-    border: 1;
     padding: 0;
-    width: 100%;
+    border: 0;
+    height: 50%;
+    flex: 1;
   }
 
   .cell {
@@ -131,6 +125,7 @@
 
   .cell img {
     width: 100%;
+    aspect-ratio: 1 / 1;
   }
 
   .cell .overlay {
