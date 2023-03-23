@@ -1,41 +1,98 @@
-// @deno-types="@types/express"
-import express from "express";
-import { InteractionType, verifyKeyMiddleware } from "discord-interactions";
 import { AppCommandInteraction } from "./utils/mod.ts";
 import { ping, playWith } from "./slash/mod.ts";
 import "std/dotenv/load.ts";
+import nacl from "cdn:tweetnacl";
+import { json, serve, validateRequest } from "x:shift";
+import {
+  InteractionResponseType,
+  InteractionType,
+  MessageComponent,
+} from "./utils/interactions.ts";
 
-const app = express();
-
-app.get("/", (_req, res) => {
-  res.status(200).send({
-    message: "Hello world",
-  });
+serve({
+  "/interactions": interactions,
 });
 
-app.post(
-  "/interactions",
-  verifyKeyMiddleware(Deno.env.get("CLIENT_PUBLIC_KEY") || ""),
-  (req, res) => {
-    const interaction = req.body;
-    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-      const myInteraction = interaction as AppCommandInteraction;
+async function interactions(request: Request) {
+  // validateRequest() ensures that a request is of POST method and
+  // has the following headers.
+  const { error } = await validateRequest(request, {
+    POST: {
+      headers: ["X-Signature-Ed25519", "X-Signature-Timestamp"],
+    },
+  });
 
-      switch (myInteraction.data.name) {
-        case "ping":
-          ping(myInteraction, res);
-          break;
-        case "playwith": {
-          playWith(myInteraction, res);
-          break;
-        }
+  if (error) {
+    return json({ error: error.message }, { status: error.status });
+  }
+
+  // verifySignature() verifies if the request is coming from Discord.
+  // When the request's signature is not valid, we return a 401 and this is
+  // important as Discord sends invalid requests to test our verification.
+  const { valid, body } = await verifySignature(request);
+  if (!valid) {
+    return json(
+      { error: "Invalid request" },
+      {
+        status: 401,
+      },
+    );
+  }
+
+  const interaction = JSON.parse(body);
+
+  // Discord performs Ping interactions to test our application.
+  if (interaction.type === InteractionType.PING) {
+    return json({
+      type: InteractionResponseType.PONG,
+    });
+  }
+
+  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+    const myInteraction = interaction as AppCommandInteraction;
+
+    switch (myInteraction.data.name) {
+      case "ping":
+        return jsonInteractionResponse(ping(myInteraction));
+      case "playwith": {
+        return jsonInteractionResponse(playWith(myInteraction));
       }
     }
-  },
-);
+  }
 
-const PORT = Deno.env.get("PORT") || 8000;
+  // We will return a bad request error as a valid Discord request
+  // shouldn't reach here.
+  return json({ error: "bad request" }, { status: 400 });
+}
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+async function verifySignature(
+  request: Request,
+): Promise<{ valid: boolean; body: string }> {
+  const PUBLIC_KEY = Deno.env.get("CLIENT_PUBLIC_KEY")!;
+  // Discord sends these headers with every request.
+  const signature = request.headers.get("X-Signature-Ed25519")!;
+  const timestamp = request.headers.get("X-Signature-Timestamp")!;
+  const body = await request.text();
+  const valid = nacl.sign.detached.verify(
+    new TextEncoder().encode(timestamp + body),
+    hexToUint8Array(signature),
+    hexToUint8Array(PUBLIC_KEY),
+  );
+
+  return { valid, body };
+}
+
+/** Converts a hexadecimal string to Uint8Array. */
+function hexToUint8Array(hex: string) {
+  return new Uint8Array(hex.match(/.{1,2}/g)!.map((val) => parseInt(val, 16)));
+}
+
+function jsonInteractionResponse(data: {
+  content: string;
+  components?: MessageComponent[] | undefined;
+}) {
+  return json({
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data,
+  });
+}

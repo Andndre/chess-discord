@@ -3,7 +3,7 @@ import {
   ButtonStyleTypes,
   MessageComponent,
   MessageComponentTypes,
-} from "discord-interactions";
+} from "./interactions.ts";
 
 export function createButton(
   label: string,

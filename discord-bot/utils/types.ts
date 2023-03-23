@@ -1,4 +1,4 @@
-import { InteractionResponseType } from "discord-interactions";
+import { InteractionResponseType, MessageComponent } from "./interactions.ts";
 
 export interface AppCommandInteraction {
   app_permissions: string;
@@ -88,5 +88,7 @@ export type MyResponse = {
 
 export type SlashCommandHandler = (
   interaction: AppCommandInteraction,
-  res: MyResponse,
-) => void;
+) => {
+  content: string;
+  components?: MessageComponent[];
+};

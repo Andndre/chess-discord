@@ -1,3 +1,6 @@
 {
-  "importMap": "./import_map.json"
+  "importMap": "./import_map.json",
+  "tasks": {
+    "start": "deno run -A main.ts"
+  }
 }

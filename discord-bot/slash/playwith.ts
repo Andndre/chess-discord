@@ -1,21 +1,19 @@
-import { ButtonStyleTypes } from "discord-interactions";
+import { ButtonStyleTypes } from "../utils/interactions.ts";
 import {
   AppCommandInteraction,
   createActionRow,
   createButton,
-  MyResponse,
-  sendChannelMessage,
-  sendChannelMessageText,
   SlashCommandHandler,
 } from "../utils/mod.ts";
 
 export const playWith: SlashCommandHandler = (
   interaction: AppCommandInteraction,
-  res: MyResponse,
 ) => {
   if (!interaction.data.options) {
     // no args were passed
-    return;
+    return {
+      content: "",
+    };
   }
 
   const taggedId = interaction.data.options[0].value;
@@ -23,18 +21,20 @@ export const playWith: SlashCommandHandler = (
 
   if (!taggedUser) {
     // not sure why
-    console.log("Tagged user does not exist");
-    return;
+    return {
+      content: "Tagged user does not exist",
+    };
   }
 
   if (taggedUser.bot) {
-    sendChannelMessageText(res, "Cannot play with bot!");
-    return;
+    return {
+      content: "Cannot play with bot!",
+    };
   }
 
   const userId = interaction.member.user.id;
 
-  sendChannelMessage(res, {
+  return {
     content: `<@${userId}> vs <@${taggedId}>`,
     components: [
       createActionRow([
@@ -45,5 +45,5 @@ export const playWith: SlashCommandHandler = (
         ),
       ]),
     ],
-  });
+  };
 };

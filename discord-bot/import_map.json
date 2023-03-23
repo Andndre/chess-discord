@@ -1,6 +1,7 @@
 {
   "imports": {
-    "discord-interactions/": "discord-interactions/",
-    "std/": "https://deno.land/std@0.180.0/"
+    "std/": "https://deno.land/std@0.180.0/",
+    "cdn:tweetnacl": "https://cdn.skypack.dev/tweetnacl@v1.0.3?dts",
+    "x:shift": "https://deno.land/x/sift@0.6.0/mod.ts"
   }
 }
