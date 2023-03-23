@@ -1,8 +1,12 @@
-import type { utils } from "../deps.ts";
+import {
+  AppCommandInteraction,
+  MyResponse,
+  SlashCommandHandler,
+} from "../utils/mod.ts";
 
-export const ping: utils.SlashCommandHandler = (
-  _interaction: utils.AppCommandInteraction,
-  _res: utils.MyResponse,
+export const ping: SlashCommandHandler = (
+  _interaction: AppCommandInteraction,
+  _res: MyResponse,
 ) => {
   // TODO:
 };

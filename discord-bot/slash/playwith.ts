@@ -1,8 +1,17 @@
-import { utils } from "../deps.ts";
+import { ButtonStyleTypes } from "discord-interactions";
+import {
+  AppCommandInteraction,
+  createActionRow,
+  createButton,
+  MyResponse,
+  sendChannelMessage,
+  sendChannelMessageText,
+  SlashCommandHandler,
+} from "../utils/mod.ts";
 
-export const playWith: utils.SlashCommandHandler = (
-  interaction: utils.AppCommandInteraction,
-  res: utils.MyResponse,
+export const playWith: SlashCommandHandler = (
+  interaction: AppCommandInteraction,
+  res: MyResponse,
 ) => {
   if (!interaction.data.options) {
     // no args were passed
@@ -19,19 +28,19 @@ export const playWith: utils.SlashCommandHandler = (
   }
 
   if (taggedUser.bot) {
-    utils.sendChannelMessageText(res, "Cannot play with bot!");
+    sendChannelMessageText(res, "Cannot play with bot!");
     return;
   }
 
   const userId = interaction.member.user.id;
 
-  utils.sendChannelMessage(res, {
+  sendChannelMessage(res, {
     content: `<@${userId}> vs <@${taggedId}>`,
     components: [
-      utils.createActionRow([
-        utils.createButton(
+      createActionRow([
+        createButton(
           "Go watch!",
-          5, // 5 for LINK
+          ButtonStyleTypes.LINK,
           "https://www.google.com",
         ),
       ]),

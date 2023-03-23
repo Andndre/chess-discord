@@ -1,21 +1,26 @@
-import { DI } from "../deps.ts";
+import {
+  Button,
+  ButtonStyleTypes,
+  MessageComponent,
+  MessageComponentTypes,
+} from "discord-interactions";
 
 export function createButton(
   label: string,
-  style: DI.ButtonStyleTypes,
+  style: ButtonStyleTypes,
   url?: string,
 ) {
   return {
-    type: DI.MessageComponentTypes.BUTTON,
+    type: MessageComponentTypes.BUTTON,
     label,
     style,
     url,
-  } as DI.Button;
+  } as Button;
 }
 
-export function createActionRow(components: DI.MessageComponent[]) {
+export function createActionRow(components: MessageComponent[]) {
   return {
-    type: DI.MessageComponentTypes.ACTION_ROW,
+    type: MessageComponentTypes.ACTION_ROW,
     components,
-  } as DI.MessageComponent;
+  } as MessageComponent;
 }
