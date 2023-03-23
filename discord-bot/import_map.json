@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "discord-interactions/": "discord-interactions/",
+    "std/": "https://deno.land/std@0.180.0/"
+  }
+}

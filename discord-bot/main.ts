@@ -3,7 +3,7 @@ import express from "express";
 import { InteractionType, verifyKeyMiddleware } from "discord-interactions";
 import { AppCommandInteraction } from "./utils/mod.ts";
 import { ping, playWith } from "./slash/mod.ts";
-import "https://deno.land/std@0.180.0/dotenv/load.ts";
+import "std/dotenv/load.ts";
 
 const app = express();
 
