@@ -1,4 +1,4 @@
-import { DI, utils } from "../deps.ts";
+import { utils } from "../deps.ts";
 
 export const playWith: utils.SlashCommandHandler = (
   interaction: utils.AppCommandInteraction,
@@ -9,8 +9,8 @@ export const playWith: utils.SlashCommandHandler = (
     return;
   }
 
-  const id = interaction.data.options[0].value;
-  const taggedUser = interaction.data.resolved?.users[id];
+  const taggedId = interaction.data.options[0].value;
+  const taggedUser = interaction.data.resolved?.users[taggedId];
 
   if (!taggedUser) {
     // not sure why
@@ -23,19 +23,17 @@ export const playWith: utils.SlashCommandHandler = (
     return;
   }
 
-  const player_one = interaction.member.user.username;
-  const player_two = taggedUser.username;
-
-  //   if (player_one === player_two) {
-  //     sendChannelMessageText(res, "Cannot play with yourself!");
-  //     return;
-  //   }
+  const userId = interaction.member.user.id;
 
   utils.sendChannelMessage(res, {
-    content: `${player_one} vs ${player_two}!`,
+    content: `<@${userId}> vs <@${taggedId}>`,
     components: [
       utils.createActionRow([
-        utils.createButton("Go watch!", DI.ButtonStyleTypes.LINK, ""),
+        utils.createButton(
+          "Go watch!",
+          5, // 5 for LINK
+          "https://www.google.com",
+        ),
       ]),
     ],
   });
