@@ -1,4 +1,4 @@
-import type { InteractionResponseType } from "npm:discord-interactions";
+import type { DI } from "../deps.ts";
 
 export interface AppCommandInteraction {
   app_permissions: string;
@@ -82,7 +82,7 @@ export interface AppCommandInteraction {
 
 export type MyResponse = {
   send: (
-    body: { type: InteractionResponseType; data: { content: string } },
+    body: { type: DI.InteractionResponseType; data: { content: string } },
   ) => void;
 };
 

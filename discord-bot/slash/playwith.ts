@@ -1,20 +1,8 @@
-import {
-  sendChannelMessage,
-  sendChannelMessageText,
-} from "../utils/messages.ts";
+import { DI, utils } from "../deps.ts";
 
-import type {
-  AppCommandInteraction,
-  MyResponse,
-  SlashCommandHandler,
-} from "../utils/types.ts";
-
-import { ButtonStyleTypes } from "npm:discord-interactions";
-import { createActionRow, createButton } from "../utils/components.ts";
-
-export const playWith: SlashCommandHandler = (
-  interaction: AppCommandInteraction,
-  res: MyResponse,
+export const playWith: utils.SlashCommandHandler = (
+  interaction: utils.AppCommandInteraction,
+  res: utils.MyResponse,
 ) => {
   if (!interaction.data.options) {
     // no args were passed
@@ -31,7 +19,7 @@ export const playWith: SlashCommandHandler = (
   }
 
   if (taggedUser.bot) {
-    sendChannelMessageText(res, "Cannot play with bot!");
+    utils.sendChannelMessageText(res, "Cannot play with bot!");
     return;
   }
 
@@ -43,11 +31,11 @@ export const playWith: SlashCommandHandler = (
   //     return;
   //   }
 
-  sendChannelMessage(res, {
+  utils.sendChannelMessage(res, {
     content: `${player_one} vs ${player_two}!`,
     components: [
-      createActionRow([
-        createButton("Go watch!", ButtonStyleTypes.LINK, ""),
+      utils.createActionRow([
+        utils.createButton("Go watch!", DI.ButtonStyleTypes.LINK, ""),
       ]),
     ],
   });

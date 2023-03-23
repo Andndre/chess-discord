@@ -1,14 +1,4 @@
-// @deno-types="npm:@types/express"
-import express from "npm:express";
-import { InteractionType, verifyKeyMiddleware } from "npm:discord-interactions";
-
-import type { AppCommandInteraction } from "./utils/types.ts";
-import { playWith } from "./slash/playwith.ts";
-import { ping } from "./slash/ping.ts";
-
-import "https://deno.land/std@0.180.0/dotenv/load.ts";
-
-const app = express();
+import { app, DI, slash, utils } from "./deps.ts";
 
 app.get("/", (_req, res) => {
   res.status(200);
@@ -19,18 +9,18 @@ app.get("/", (_req, res) => {
 
 app.post(
   "/interactions",
-  verifyKeyMiddleware(Deno.env.get("CLIENT_PUBLIC_KEY") || ""),
+  DI.verifyKeyMiddleware(Deno.env.get("CLIENT_PUBLIC_KEY") || ""),
   (req, res) => {
     const interaction = req.body;
-    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-      const myInteraction = interaction as AppCommandInteraction;
+    if (interaction.type === DI.InteractionType.APPLICATION_COMMAND) {
+      const myInteraction = interaction as utils.AppCommandInteraction;
 
       switch (myInteraction.data.name) {
         case "ping":
-          ping(myInteraction, res);
+          slash.ping(myInteraction, res);
           break;
         case "playwith": {
-          playWith(myInteraction, res);
+          slash.playWith(myInteraction, res);
           break;
         }
       }

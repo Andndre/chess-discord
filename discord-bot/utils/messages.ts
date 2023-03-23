@@ -1,12 +1,7 @@
-import {
-  InteractionResponseType,
-  type MessageComponent,
-} from "npm:discord-interactions";
-
-import type { MyResponse } from "./types.ts";
+import { DI, utils } from "../deps.ts";
 
 export function sendChannelMessageText(
-  res: MyResponse,
+  res: utils.MyResponse,
   content: string,
 ) {
   sendChannelMessage(res, {
@@ -14,12 +9,12 @@ export function sendChannelMessageText(
   });
 }
 
-export function sendChannelMessage(res: MyResponse, data: {
+export function sendChannelMessage(res: utils.MyResponse, data: {
   content: string;
-  components?: MessageComponent[];
+  components?: DI.MessageComponent[];
 }) {
   res.send({
-    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    type: DI.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data,
   });
 }
