@@ -1,7 +1,7 @@
-import { serve } from "https://deno.land/std@0.166.0/http/server.ts";
-import { Server, Socket } from "https://deno.land/x/socket_io@0.2.0/mod.ts";
-import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
-import "https://deno.land/std@0.180.0/dotenv/load.ts";
+import { serve } from "serve";
+import { Server, Socket } from "socket.io";
+import { Application, Router } from "oak";
+import "dotenv/load.ts";
 
 import { Game, Move } from "./interfaces.ts";
 import { Errors, Events } from "./ws-types.ts";

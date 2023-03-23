@@ -6,11 +6,13 @@ import {
   SlashCommandHandler,
 } from "../utils/mod.ts";
 
-export const playWith: SlashCommandHandler = (
+const discordAPI = "https://discord.com/api/v9/";
+
+export const playWith: SlashCommandHandler = async (
   interaction: AppCommandInteraction,
 ) => {
   if (!interaction.data.options) {
-    // no args were passed
+    // no args were passed (cannot happen since the options are required)
     return {
       content: "",
     };
@@ -34,6 +36,41 @@ export const playWith: SlashCommandHandler = (
 
   const userId = interaction.member.user.id;
 
+  const response = await fetch("https://chess-backend.deno.dev/create", {
+    method: "GET",
+    headers: {
+      "api-Key": Deno.env.get("MY_SECRET") || "",
+      "Content-Type": "application/json",
+    },
+  });
+
+  const game = await response.json() as {
+    gameId: string;
+    whiteId: string;
+    blackId: string;
+    watchKey: string;
+  };
+
+  const baseUrl =
+    `https://chess-discord.vercel.app/online?gameId=${game.gameId}&roleId=`;
+  const watchUrl = baseUrl + game.watchKey;
+  const whiteUrl = baseUrl + game.whiteId;
+  const blackUrl = baseUrl + game.blackId;
+
+  const playerMessage =
+    "Hello, here is your game link (do not share it with anyone before you clicked it): ";
+
+  const [first, second] = await Promise.all([
+    sendDM(userId, playerMessage + whiteUrl),
+    sendDM(taggedId, playerMessage + blackUrl),
+  ]);
+
+  if (!first || !second) {
+    return {
+      content: "Failed to send DM",
+    };
+  }
+
   return {
     content: `<@${userId}> vs <@${taggedId}>`,
     components: [
@@ -41,9 +78,44 @@ export const playWith: SlashCommandHandler = (
         createButton(
           "Go watch!",
           ButtonStyleTypes.LINK,
-          "https://www.google.com",
+          watchUrl,
         ),
       ]),
     ],
   };
 };
+
+async function sendDM(recipient_id: string, content: string) {
+  const options = {
+    method: "POST",
+    headers: {
+      "Authorization": `Bot ${Deno.env.get("TOKEN") || ""}`,
+      "Content-Type": "application/json",
+    },
+  };
+  const channelResponse = await fetch(
+    `${discordAPI}users/@me/channels`,
+    {
+      ...options,
+      body: JSON.stringify({
+        recipient_id,
+      }),
+    },
+  );
+
+  if (!channelResponse.ok) return false;
+
+  const channel = await channelResponse.json();
+
+  const dirrectMessage = await fetch(
+    `${discordAPI}channels/${channel.id}/messages`,
+    {
+      ...options,
+      body: JSON.stringify({
+        content,
+      }),
+    },
+  );
+
+  return dirrectMessage.ok;
+}

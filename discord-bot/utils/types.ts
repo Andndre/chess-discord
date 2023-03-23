@@ -1,8 +1,8 @@
 import { InteractionResponseType, MessageComponent } from "./interactions.ts";
 
 export interface AppCommandInteraction {
-  app_permissions: string;
-  application_id: string;
+  // app_permissions: string;
+  // application_id: string;
   channel_id: string;
   data: {
     /**
@@ -41,11 +41,6 @@ export interface AppCommandInteraction {
         };
       };
     };
-    /**
-     * The type of the Command (?) LOL
-     *
-     * `1` for simple command with no args
-     */
     type: number;
   };
   // entitlement_sku_ids: string[] ?
@@ -88,7 +83,7 @@ export type MyResponse = {
 
 export type SlashCommandHandler = (
   interaction: AppCommandInteraction,
-) => {
+) => Promise<{
   content: string;
   components?: MessageComponent[];
-};
+}>;

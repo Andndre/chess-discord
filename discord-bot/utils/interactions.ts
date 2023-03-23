@@ -217,6 +217,7 @@ export type EmojiInfo = {
   name: string | undefined;
   id: string | undefined;
   // Should define the user object in future
+  // deno-lint-ignore no-explicit-any
   user?: { [key: string]: any };
   roles?: string[];
   require_colons?: boolean;

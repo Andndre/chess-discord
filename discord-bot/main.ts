@@ -53,9 +53,9 @@ async function interactions(request: Request) {
 
     switch (myInteraction.data.name) {
       case "ping":
-        return jsonInteractionResponse(ping(myInteraction));
+        return jsonInteractionResponse(await ping(myInteraction));
       case "playwith": {
-        return jsonInteractionResponse(playWith(myInteraction));
+        return jsonInteractionResponse(await playWith(myInteraction));
       }
     }
   }
