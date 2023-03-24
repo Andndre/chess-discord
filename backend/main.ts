@@ -6,8 +6,49 @@ import "dotenv/load.ts";
 import { Game, Move } from "./interfaces.ts";
 import { Errors, Events } from "./ws-types.ts";
 
-const games = new Map<string, Game>();
-const connections = new Map<string, string>();
+type MapBroadcastChannelMessage<K, V> = {
+  key: K;
+} & ({ value: V; action: "set" } | { value?: undefined; action: "delete" });
+
+class MapBroadcastChannel<K, V> {
+  static id = 0;
+  local = new Map<K, V>();
+  broadcastChannel = new BroadcastChannel(`${++MapBroadcastChannel.id}`);
+
+  constructor() {
+    this.broadcastChannel.onmessage = (ev) => {
+      const data = ev.data as MapBroadcastChannelMessage<K, V>;
+      switch (data.action) {
+        case "set":
+          this.local.set(data.key, data.value);
+          break;
+        case "delete":
+          this.local.delete(data.key);
+      }
+    };
+  }
+
+  get(key: K) {
+    return this.local.get(key);
+  }
+
+  set(key: K, value: V) {
+    this.local.set(key, value);
+    this.broadcastChannel.postMessage(
+      { key, value, action: "set" } as MapBroadcastChannelMessage<K, V>,
+    );
+  }
+
+  delete(key: K) {
+    this.local.delete(key);
+    this.broadcastChannel.postMessage(
+      { key, action: "delete" } as MapBroadcastChannelMessage<K, V>,
+    );
+  }
+}
+
+const games = new MapBroadcastChannel<string, Game>();
+const connections = new MapBroadcastChannel<string, string>();
 
 const app = new Application();
 const router = new Router()
