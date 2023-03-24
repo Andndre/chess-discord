@@ -6,6 +6,9 @@ import "dotenv/load.ts";
 import { Game, Move } from "./interfaces.ts";
 import { Errors, Events } from "./ws-types.ts";
 
+const games = new Map<string, Game>();
+const connections = new Map<string, string>();
+
 const app = new Application();
 const router = new Router()
   .get("/", (ctx) => {
@@ -36,8 +39,6 @@ const router = new Router()
       moves: [],
     });
 
-    console.log("set " + games.get(gameId));
-
     // delete game when no one is playing the game in 3 minutes
     setTimeout(
       () => {
@@ -64,9 +65,6 @@ const router = new Router()
     ctx.response.body = game;
   });
 
-const games = new Map<string, Game>();
-const connections = new Map<string, string>();
-
 const io = new Server({
   path: "/ws/",
   cors: {
@@ -88,8 +86,6 @@ io.on("connection", (socket) => {
 
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);
-
-    console.log(game);
 
     if (!game) {
       socket.emit("error", "game-not-found" satisfies Errors);
@@ -164,10 +160,8 @@ io.on("connection", (socket) => {
     game.moves.push(move);
 
     if (game.black.ws?.id === socket.id) {
-      console.log("black is moving");
       game.white.ws!.emit<Events>("move", move);
     } else if (game.white.ws?.id === socket.id) {
-      console.log("white is moving");
       game.black.ws!.emit<Events>("move", move);
     }
     broadcast(game.watchers, "move", move);

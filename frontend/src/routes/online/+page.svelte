@@ -88,14 +88,11 @@
     waitingForPlayer = false;
     lightenBg = true;
     chess.setRole(role!);
-    console.log(chess.freezeOn);
     chess = chess;
   });
 
   socket.on<Chess_WS_Events>("move", (move: BasicMove) => {
-    console.log(move);
-
-    console.log(chess.simulateClicksToMove(move.from, move.to, move.becameTo));
+    chess.simulateClicksToMove(move.from, move.to, move.becameTo);
     chess = chess;
   });
 

@@ -84,8 +84,6 @@ export default class Chess {
   next() {
     this.onMove(this.getLastMove()!);
     this.current = Pieces.invertColor(this.current);
-    console.log("inverting current to " + this.current);
-
     this.generateMoves();
   }
 
