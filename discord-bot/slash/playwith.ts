@@ -67,16 +67,10 @@ export const playWith: SlashCommandHandler = async (
   const playerMessage =
     "Hello, here is your game link (do not share it with anyone before you clicked it): ";
 
-  const [first, second] = await Promise.all([
+  Promise.all([
     sendDM(userId, playerMessage + whiteUrl),
     sendDM(taggedId, playerMessage + blackUrl),
   ]);
-
-  if (!first || !second) {
-    return {
-      content: "Failed to send DM",
-    };
-  }
 
   return {
     content: `<@${userId}> vs <@${taggedId}>`,
