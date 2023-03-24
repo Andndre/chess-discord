@@ -89,7 +89,7 @@ io.on("connection", (socket) => {
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);
 
-    console.log("games: " + games);
+    console.log(game);
 
     if (!game) {
       socket.emit("error", "game-not-found" satisfies Errors);
