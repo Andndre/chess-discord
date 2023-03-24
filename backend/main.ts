@@ -23,6 +23,7 @@ const router = new Router()
     const blackId = crypto.randomUUID();
     const gameId = crypto.randomUUID();
     const watchKey = crypto.randomUUID();
+
     games.set(gameId, {
       white: {
         id: whiteId,
@@ -79,18 +80,18 @@ function broadcast(wss: (Socket | undefined)[], event: Events, ...args: any[]) {
 io.on("connection", (socket) => {
   console.log(`socket ${socket.id} connected`);
 
-  socket.emit<Events>("connection", "Hello from the local server");
+  socket.emit<Events>("connection", "Hello from server");
 
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);
 
     if (!game) {
-      socket.emit("error", "game-not-found" as Errors);
+      socket.emit("error", "game-not-found" satisfies Errors);
       socket.disconnect(true);
       return;
     }
 
-    let res_role = "";
+    let res_role: "" | "watching" | "black" | "white" = "";
     switch (roleKey) {
       case game.watchKey:
         res_role = "watching";
@@ -133,18 +134,37 @@ io.on("connection", (socket) => {
         break;
     }
 
+    const waiting = !game.white.ws || !game.black.ws;
+
     socket.emit<Events>(
       "connectToGame",
       res_role,
       game.moves,
       game.watchers.length,
-      !game.white.ws || !game.black.ws,
+      waiting,
     );
+
+    if (!waiting) {
+      socket.emit<Events>("start");
+    }
   });
 
   socket.on<Events>("move", (move: Move) => {
-    console.log(move);
-    // TODO: complete this
+    const gameId = connections.get(socket.id);
+    if (!gameId) return; // TODO:
+    const game = games.get(gameId);
+    if (!game) return; // TODO:
+
+    game.moves.push(move);
+
+    if (game.black.ws?.id === socket.id) {
+      console.log("black is moving");
+      game.white.ws!.emit<Events>("move", move);
+    } else if (game.white.ws?.id === socket.id) {
+      console.log("white is moving");
+      game.black.ws!.emit<Events>("move", move);
+    }
+    broadcast(game.watchers, "move", move);
   });
 
   socket.on("disconnect", (reason) => {
@@ -175,7 +195,10 @@ io.on("connection", (socket) => {
           if (index !== -1) {
             // on watcher leave
             game.watchers.splice(index, 1);
-            broadcast([game.black.ws, game.white.ws], "watcherLeave");
+            broadcast(
+              [game.black.ws, game.white.ws, ...game.watchers],
+              "watcherLeave",
+            );
           }
         }
       }
