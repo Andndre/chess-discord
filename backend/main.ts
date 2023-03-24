@@ -51,13 +51,18 @@ const router = new Router()
       1000 * 60 * 3,
     );
 
-    ctx.response.status = 201;
-    ctx.response.body = {
+    const game = {
       gameId,
       whiteId,
       blackId,
       watchKey,
     };
+
+    console.log("created a game");
+    console.log(game);
+
+    ctx.response.status = 201;
+    ctx.response.body = game;
   });
 
 const games = new Map<string, Game>();

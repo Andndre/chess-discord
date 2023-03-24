@@ -59,6 +59,9 @@ export const playWith: SlashCommandHandler = async (
     watchKey: string;
   };
 
+  console.log("created a game");
+  console.log(game);
+
   const baseUrl = `${frontend}online?gameId=${game.gameId}&roleKey=`;
   const watchUrl = baseUrl + game.watchKey;
   const whiteUrl = baseUrl + game.whiteId;
