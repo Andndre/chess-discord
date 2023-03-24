@@ -84,6 +84,8 @@ export default class Chess {
   next() {
     this.onMove(this.getLastMove()!);
     this.current = Pieces.invertColor(this.current);
+    console.log("inverting current to " + this.current);
+
     this.generateMoves();
   }
 
@@ -119,7 +121,11 @@ export default class Chess {
    * @param offset
    */
   clickTile(offset: number, force: boolean = false) {
-    if (!force && this.freezeOn.includes(this.current)) return "frozen";
+    if (!force) {
+      if (this.freezeOn.includes(this.current)) {
+        return "frozen";
+      }
+    }
     const isFriendly = this.board[offset].color === this.current;
     if (isFriendly) {
       // select
@@ -148,15 +154,13 @@ export default class Chess {
    * @param to second click
    * @param promoteTo third click (if promoting)
    *
-   * @throws Error when the move performed was invalid
+   * @returns true if the move is valid
    */
   simulateClicksToMove(from: number, to: number, promoteTo?: PieceType) {
     if (
       !this.validMoves[from].find((move) => move.to === to)
     ) {
-      throw new Error(
-        "The move cannot be performed because the move was invalid",
-      );
+      return false;
     }
 
     this.clickTile(from, true);
@@ -170,6 +174,11 @@ export default class Chess {
       }
       this.promoteLastMoveTo(promoteTo);
     }
+
+    // TODO: make a iterable version of this function so that we don't need to call the generate function over and over
+    this.current = Pieces.invertColor(this.current);
+    this.generateMoves();
+    return true;
   }
 
   promoteLastMoveTo(type: PieceType) {
@@ -203,5 +212,16 @@ export default class Chess {
     Moves.undoMove(this.board, move);
     this.onUndo(move);
     this.next();
+  }
+
+  setRole(role: "black" | "white" | "watching") {
+    Arrays.clear(this.freezeOn);
+    if (role === "black") {
+      this.freezeOn.push(PieceColor.WHITE);
+    } else if (role === "white") {
+      this.freezeOn.push(PieceColor.BLACK);
+    } else {
+      this.freezeOn.push(PieceColor.BLACK, PieceColor.WHITE);
+    }
   }
 }

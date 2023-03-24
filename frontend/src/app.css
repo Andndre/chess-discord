@@ -1,5 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Signika:wght@300;400;600&display=swap");
+
 :root {
   --background: #524330;
+  font-family: "Signika", sans-serif;
 }
 
 *,

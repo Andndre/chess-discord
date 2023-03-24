@@ -4,11 +4,14 @@ import type Chess from "./chess";
 import { Coords } from "./coordinates";
 
 const _2dOffset: number[][] = [];
+const _2dOffsetFlipped: number[][] = [];
 
 for (let y = 0; y < 8; y++) {
   _2dOffset.push([]);
+  _2dOffsetFlipped.push([]);
   for (let x = 0; x < 8; x++) {
     _2dOffset[y].push(Coords.getOffset(x, y));
+    _2dOffsetFlipped[y].push(Coords.getOffset(7 - x, 7 - y));
   }
 }
 
@@ -16,6 +19,10 @@ for (let y = 0; y < 8; y++) {
   Used for rendering the board in 2D (since the board is 1D array)
  */
 export const twoDimensionalOffset = _2dOffset;
+/**
+ * `twoDimensionalOffset` but flipped (used when rendering black side view)
+ */
+export const twoDimensionalOffsetFlipped = _2dOffsetFlipped;
 
 export const lightTileColor = "#f2dcb6";
 export const darkTileColor = "#b57d45";

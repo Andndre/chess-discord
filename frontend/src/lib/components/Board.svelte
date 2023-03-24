@@ -5,6 +5,11 @@
 
   // external
   export let chess: Chess;
+  export let flip: boolean;
+
+  $: boardOffsets = flip
+    ? Rendering.twoDimensionalOffsetFlipped
+    : Rendering.twoDimensionalOffset;
 
   // internal
   let promoteOffset = -1;
@@ -16,7 +21,7 @@
 
 <div class="container">
   <div class="board">
-    {#each Rendering.twoDimensionalOffset as row}
+    {#each boardOffsets as row}
       <div class="row">
         {#each row as offset}
           {#if offset === promoteOffset}
@@ -44,6 +49,7 @@
           {:else}
             <button
               on:click={() => {
+                console.log("clicked");
                 if (chess.clickTile(offset) === "move") {
                   if (chess.isPromote()) {
                     promoteOffset = offset;

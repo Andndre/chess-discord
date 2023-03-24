@@ -8,6 +8,7 @@
   .lds-ellipsis {
     display: inline-block;
     position: relative;
+    cursor: progress;
     width: 80px;
     height: 80px;
   }
