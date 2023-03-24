@@ -6,9 +6,14 @@ import "dotenv/load.ts";
 import { Game, Move } from "./interfaces.ts";
 import { Errors, Events } from "./ws-types.ts";
 
-type MapBroadcastChannelMessage<K, V> = {
-  key: K;
-} & ({ value: V; action: "set" } | { value?: undefined; action: "delete" });
+type MapBroadcastChannelMessage<K, V> =
+  & {
+    key: K;
+  }
+  & ({ value: V; action: "set" } | {
+    value?: undefined;
+    action: "delete" | "ask";
+  });
 
 class MapBroadcastChannel<K, V> {
   static id = 0;
@@ -24,11 +29,39 @@ class MapBroadcastChannel<K, V> {
           break;
         case "delete":
           this.local.delete(data.key);
+          break;
+        case "ask": {
+          const mydata = this.local.get(data.key);
+          if (mydata) {
+            this.broadcastChannel.postMessage(
+              {
+                action: "set",
+                key: data.key,
+                value: mydata,
+              } as MapBroadcastChannelMessage<K, V>,
+            );
+          }
+          break;
+        }
       }
     };
   }
 
-  get(key: K) {
+  async get(key: K, retries = 2): Promise<V | undefined> {
+    if (retries === 0) return undefined;
+    if (!this.local.get(key)) {
+      // ask to another data centers
+      this.broadcastChannel.postMessage(
+        { key, action: "ask" } as MapBroadcastChannelMessage<K, V>,
+      );
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 500);
+      });
+
+      return this.get(key, --retries);
+    }
     return this.local.get(key);
   }
 
@@ -80,21 +113,6 @@ const router = new Router()
       moves: [],
     });
 
-    // delete game when no one is playing the game in 3 minutes
-    setTimeout(
-      () => {
-        const game = games.get(gameId);
-        if (!game) return;
-        broadcast(game.watchers, "playerLeave");
-        if (!game.black.ws && !game.white.ws) {
-          games.delete(gameId);
-          console.log("closing game (" + gameId + ") due to inactivity");
-        }
-      },
-      // 3 minutes
-      1000 * 60 * 3,
-    );
-
     const game = {
       gameId,
       whiteId,
@@ -125,8 +143,8 @@ io.on("connection", (socket) => {
 
   socket.emit<Events>("connection", "Hello from server");
 
-  socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
-    const game = games.get(gameId);
+  socket.on<Events>("joinRoom", async (roleKey: string, gameId: string) => {
+    const game = await games.get(gameId);
 
     if (!game) {
       socket.emit("error", "game-not-found" satisfies Errors);
@@ -192,10 +210,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on<Events>("move", (move: Move) => {
-    const gameId = connections.get(socket.id);
+  socket.on<Events>("move", async (move: Move) => {
+    const gameId = await connections.get(socket.id);
     if (!gameId) return; // TODO:
-    const game = games.get(gameId);
+    const game = await games.get(gameId);
     if (!game) return; // TODO:
 
     game.moves.push(move);
@@ -208,12 +226,12 @@ io.on("connection", (socket) => {
     broadcast(game.watchers, "move", move);
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", async (reason) => {
     console.log(`socket ${socket.id} disconnected due to ${reason}`);
 
-    const gameId = connections.get(socket.id);
+    const gameId = await connections.get(socket.id);
     if (gameId) {
-      const game = games.get(gameId);
+      const game = await games.get(gameId);
       if (game) {
         if (game.black.ws == socket || game.white.ws == socket) {
           const enemy = game.white.ws === socket

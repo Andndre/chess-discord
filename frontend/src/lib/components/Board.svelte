@@ -49,7 +49,6 @@
           {:else}
             <button
               on:click={() => {
-                console.log("clicked");
                 if (chess.clickTile(offset) === "move") {
                   if (chess.isPromote()) {
                     promoteOffset = offset;
