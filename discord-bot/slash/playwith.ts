@@ -34,9 +34,17 @@ export const playWith: SlashCommandHandler = async (
     };
   }
 
+  const prod = Deno.env.get("PROD");
+  const frontend = prod
+    ? "https://chess-discord.vercel.app/"
+    : "http://localhost:5173/";
+  const backend = prod
+    ? "https://chess-backend.deno.dev/"
+    : "http://localhost:3000/";
+
   const userId = interaction.member.user.id;
 
-  const response = await fetch("https://chess-backend.deno.dev/create", {
+  const response = await fetch(`${backend}create`, {
     method: "GET",
     headers: {
       "api-Key": Deno.env.get("MY_SECRET") || "",
@@ -51,8 +59,7 @@ export const playWith: SlashCommandHandler = async (
     watchKey: string;
   };
 
-  const baseUrl =
-    `https://chess-discord.vercel.app/online?gameId=${game.gameId}&roleId=`;
+  const baseUrl = `${frontend}online?gameId=${game.gameId}&roleKey=`;
   const watchUrl = baseUrl + game.watchKey;
   const whiteUrl = baseUrl + game.whiteId;
   const blackUrl = baseUrl + game.blackId;
