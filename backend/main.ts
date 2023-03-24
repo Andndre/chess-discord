@@ -36,6 +36,8 @@ const router = new Router()
       moves: [],
     });
 
+    console.log("set " + games.get(gameId));
+
     // delete game when no one is playing the game in 3 minutes
     setTimeout(
       () => {
@@ -57,9 +59,6 @@ const router = new Router()
       blackId,
       watchKey,
     };
-
-    console.log("created a game");
-    console.log(game);
 
     ctx.response.status = 201;
     ctx.response.body = game;
@@ -89,6 +88,8 @@ io.on("connection", (socket) => {
 
   socket.on<Events>("joinRoom", (roleKey: string, gameId: string) => {
     const game = games.get(gameId);
+
+    console.log("games: " + games);
 
     if (!game) {
       socket.emit("error", "game-not-found" satisfies Errors);
@@ -187,7 +188,7 @@ io.on("connection", (socket) => {
             broadcast(
               [...game.watchers, enemy],
               "playerLeave",
-              game.black.ws === socket ? "black" : "white",
+              game.black.ws?.id === socket.id ? "black" : "white",
             );
             game.watchers.forEach((w) => {
               w.disconnect(true);
