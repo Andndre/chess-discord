@@ -7,15 +7,18 @@
   import Chess from "$lib/chess-engine/chess";
   import { Arrays } from "$lib/chess-engine/utils";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
   export let data: PageData;
   let chess = new Chess({
     freezeOn: [PieceColor.BLACK, PieceColor.WHITE],
   });
 
-  if (!data.gameId) {
-    goto("/404");
-  }
+  onMount(() => {
+    if (!data.gameId) {
+      goto("/404");
+    }
+  });
 
   let history: Move[] = [];
   const moveCount = loadGameFromCompiledString(data.compiledGame);
