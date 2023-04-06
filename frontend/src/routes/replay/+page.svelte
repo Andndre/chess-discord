@@ -21,7 +21,7 @@
   });
 
   let history: Move[] = [];
-  const moveCount = loadGameFromCompiledString(data.compiledGame);
+  const moveCount = loadGameFromCompiledString(data.compiledGame!);
   let currentIndex = moveCount;
 
   function loadGameFromCompiledString(compiledString: string) {

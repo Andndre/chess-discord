@@ -15,13 +15,15 @@ export const load: PageServerLoad = async ({ url }) => {
       },
     },
   );
-  const game = await response.json() as [{
-    gameId: string;
-    compiledGame: string;
-  }];
+  const game = await response.json() as [
+    {
+      gameId: string;
+      compiledGame: string;
+    } | undefined,
+  ];
 
   return {
-    gameId: game[0].gameId,
-    compiledGame: game[0].compiledGame,
+    gameId: game[0]?.gameId,
+    compiledGame: game[0]?.compiledGame,
   };
 };
