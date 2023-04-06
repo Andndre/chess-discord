@@ -156,9 +156,10 @@
       const interval = setInterval(() => {
         countdown = countdown - 1;
         if (countdown === 0) {
-          clearInterval(interval);
           socket!.disconnect();
+          clearInterval(interval);
           goto(`/replay?gameId=${data.gameId}`);
+          return;
         }
       }, 1000);
     });
