@@ -116,7 +116,8 @@ export default class Chess {
   /**
    * Perform `select`, `move`, or `deselect` automatically
    *
-   * @param offset
+   * @param offset offset of the tile to select
+   * @param force move even if it is not our turn (default: false)
    */
   clickTile(offset: number, force: boolean = false) {
     if (!force) {
@@ -205,11 +206,18 @@ export default class Chess {
   }
 
   undo() {
+    this.gameOver = false;
+    this.gameOverReason = "";
     const move = this.moveHistory.pop();
     if (!move) return;
     Moves.undoMove(this.board, move);
+    this.current = Pieces.invertColor(this.current);
+    this.generateMoves();
     this.onUndo(move);
-    this.next();
+  }
+
+  currentRole() {
+    return this.current === PieceColor.WHITE ? "white" : "black";
   }
 
   setRole(role: "black" | "white" | "watching") {

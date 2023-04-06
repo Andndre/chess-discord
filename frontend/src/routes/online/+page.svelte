@@ -1,15 +1,17 @@
 <script lang="ts">
+  import { browser } from "$app/environment";
   import type {
     BasicMove,
     Errors,
     Events as Chess_WS_Events,
   } from "$lib/websocket/types";
+  import { PUBLIC_BACK_END_URL } from "$env/static/public";
   import type { PageData } from "./$types";
-
-  import { io } from "socket.io-client";
+  import { Socket, io } from "socket.io-client";
+  import { goto } from "$app/navigation";
 
   import Loading from "$lib/components/Loading.svelte";
-  import Chess from "$lib/chess-engine/chess";
+  import Chess, { type GameOverReason } from "$lib/chess-engine/chess";
   import Board from "$lib/components/Board.svelte";
 
   type Role = "white" | "black" | "watching";
@@ -22,18 +24,23 @@
   let role: Role | undefined;
   let loadingMessage = "Connecting to game...";
   let watchers = 0;
+  let gameOverReason = "";
   let errorMessage = "";
   let lightenBg = false;
+  let countdown = 5;
   let waitingForPlayer = true;
   let chess = new Chess({
     freezeOn: [],
     onMove: (move) => {
       if (chess.lastMoveColor())
-        socket.emit<Chess_WS_Events>("move", {
+        socket!.emit<Chess_WS_Events>("move", {
           from: move.from,
           to: move.to,
           becameTo: move.promoteToType,
         } satisfies BasicMove);
+    },
+    onGameOver: (reason) => {
+      socket!.emit<Chess_WS_Events>("gameOver", reason);
     },
   });
 
@@ -48,81 +55,117 @@
     }
   }
 
-  // socket.io
-  const socket = io(
-    import.meta.env.DEV
-      ? "http://localhost:3000"
-      : "https://chess-backend.deno.dev",
-    {
-      path: "/ws/",
-    }
-  );
+  let socket: Socket | undefined;
 
-  socket.on<Chess_WS_Events>("connection", () => {
-    connectingToWs = false;
-    loadingMessage = "Waiting for player to join...";
-    if (!data.roleKey || !data.gameId) return;
-    socket.emit<Chess_WS_Events>("joinRoom", data.roleKey, data.gameId);
-  });
+  if (browser) {
+    // socket.io
+    socket = io(PUBLIC_BACK_END_URL, {
+      path: "/socket/",
+    });
 
-  socket.on<Chess_WS_Events>(
-    "connectToGame",
-    (
-      resRole: Role,
-      resMoves: BasicMove[],
-      resWatchers: number,
-      resWaitingForPlayer
-    ) => {
-      role = resRole;
-      watchers = resWatchers;
-      waitingForPlayer = resWaitingForPlayer;
-      for (const move of resMoves) {
-        // TODO: this can be optimized!
-        chess.simulateClicksToMove(move.from, move.to, move.becameTo);
+    socket.on<Chess_WS_Events>("connection", (_welcome) => {
+      connectingToWs = false;
+      loadingMessage = "Waiting for player to join...";
+      if (!data.roleKey || !data.gameId) return;
+      socket!.emit<Chess_WS_Events>("joinRoom", data.roleKey, data.gameId);
+    });
+
+    socket.on<Chess_WS_Events>(
+      "connectToGame",
+      (
+        resRole: Role,
+        resMoves: BasicMove[],
+        resWatchers: number,
+        resWaitingForPlayer
+      ) => {
+        role = resRole;
+        watchers = resWatchers;
+        waitingForPlayer = resWaitingForPlayer;
+        for (const move of resMoves) {
+          // TODO: this can be optimized!
+          chess.simulateClicksToMove(move.from, move.to, move.becameTo);
+        }
+        chess = chess;
       }
+    );
+
+    function compileGameToString() {
+      let result = "";
+      for (const history of chess.moveHistory) {
+        result += `${history.from},${history.to},${history.promoteToType}\n`;
+      }
+      return result;
+    }
+
+    socket.on<Chess_WS_Events>("start", () => {
+      waitingForPlayer = false;
+      lightenBg = true;
+      chess.setRole(role!);
       chess = chess;
-    }
-  );
+    });
 
-  socket.on<Chess_WS_Events>("start", () => {
-    waitingForPlayer = false;
-    lightenBg = true;
-    chess.setRole(role!);
-    chess = chess;
-  });
+    socket.on<Chess_WS_Events>("move", (move: BasicMove) => {
+      chess.simulateClicksToMove(move.from, move.to, move.becameTo);
+      chess = chess;
+    });
 
-  socket.on<Chess_WS_Events>("move", (move: BasicMove) => {
-    chess.simulateClicksToMove(move.from, move.to, move.becameTo);
-    chess = chess;
-  });
+    socket.on<Chess_WS_Events>("playerLeave", (color: "black" | "white") => {
+      lightenBg = false;
+      errorMessage = `Player ${color} left the game!`;
+    });
 
-  socket.on<Chess_WS_Events>("playerLeave", () => {
-    lightenBg = false;
-    errorMessage = "One of the player leaves the game..";
-  });
+    socket.on<Chess_WS_Events>("watcherJoin", () => {
+      watchers = watchers + 1;
+    });
 
-  socket.on<Chess_WS_Events>("watcherJoin", () => {
-    watchers = watchers + 1;
-  });
+    socket.on<Chess_WS_Events>("watcherLeave", () => {
+      watchers = watchers - 1;
+    });
 
-  socket.on<Chess_WS_Events>("watcherLeave", () => {
-    watchers = watchers - 1;
-  });
+    socket.on<Chess_WS_Events>("error", (error: Errors) => {
+      switch (error) {
+        case "game-not-found":
+          goto("/replay?gameId=" + data.gameId);
+          return;
+        case "link-already-clicked":
+          errorMessage = "The role cannot be played by two people!";
+          break;
+      }
+      lightenBg = false;
+      socket!.disconnect();
+    });
 
-  socket.on<Chess_WS_Events>("error", (error: Errors) => {
-    switch (error) {
-      case "game-not-found":
-        errorMessage =
-          "The game link you've entered was not in the current running game list.. maybe it's already ended";
-        break;
-      case "link-already-clicked":
-        errorMessage = "The role cannot be played by two people!";
-        break;
-    }
-  });
+    socket.on<Chess_WS_Events>("gameOver", (reason: GameOverReason) => {
+      lightenBg = false;
+      switch (reason) {
+        case "checkMate":
+          gameOverReason = "Checkmate!";
+          break;
+        case "staleMate":
+          gameOverReason = "Stalemate!";
+          break;
+      }
+
+      if (role === chess.currentRole()) {
+        socket!.emit<Chess_WS_Events>(
+          "uploadMove",
+          data.gameId,
+          compileGameToString()
+        );
+      }
+      const interval = setInterval(() => {
+        countdown = countdown - 1;
+        if (countdown === 0) {
+          clearInterval(interval);
+          socket!.disconnect();
+          goto(`/replay?gameId=${data.gameId}`);
+        }
+      }, 1000);
+    });
+  }
 
   const beforeUnload = (event: BeforeUnloadEvent) => {
-    if (errorMessage) return;
+    if (errorMessage || gameOverReason) return;
     event.preventDefault();
     return (event.returnValue = "");
   };
@@ -139,16 +182,27 @@
   {/if}
   {#if errorMessage}
     <div class="popup-wrapper">
-      <div class="error">
+      <div class="popup-card">
         <h2>Error</h2>
         <p>{errorMessage}</p>
+      </div>
+    </div>
+  {/if}
+  {#if gameOverReason}
+    <div class="popup-wrapper">
+      <div class="popup-card">
+        <h2>Game Over!</h2>
+        <p>{gameOverReason}</p>
+        <p>Redirecting you in {countdown} second{countdown > 1 ? "s" : ""}</p>
       </div>
     </div>
   {/if}
   <div class="watcher">
     <span>{watchers}</span>
   </div>
-  <Board {chess} {flip} />
+  <div class="board-full">
+    <Board {chess} {flip} />
+  </div>
 </div>
 
 <style>
@@ -209,7 +263,7 @@
     opacity: 1;
   }
 
-  .error {
+  .popup-card {
     position: absolute;
     background: white;
     padding: 2rem;

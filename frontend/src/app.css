@@ -16,3 +16,9 @@
 html {
   background: var(--background);
 }
+
+.board-full {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

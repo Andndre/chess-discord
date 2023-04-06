@@ -30,6 +30,7 @@
                 <div class="promote">
                   {#each pRow as type}
                     <button
+                      type="button"
                       style="background: {Rendering.getTileBackgroundColor(
                         offset
                       )};"
@@ -48,6 +49,7 @@
             </div>
           {:else}
             <button
+              type="button"
               on:click={() => {
                 if (chess.clickTile(offset) === "move") {
                   if (chess.isPromote()) {
@@ -86,12 +88,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    flex: 1;
   }
 
   .board {
     max-width: 600px;
-    width: calc(min(95vw, 95vh));
+    width: calc(min(95vw, calc(95vh - 52px)));
     aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;

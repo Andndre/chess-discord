@@ -8,4 +8,7 @@ export type Events =
   | "connectToGame"
   | "playerLeave"
   | "connection"
-  | "move";
+  | "move"
+  | "gameOver"
+  | "uploadMove";
+export type Role = "watching" | "black" | "white";

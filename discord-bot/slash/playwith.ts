@@ -33,14 +33,8 @@ export const playWith: SlashCommandHandler = async (
       content: "Cannot play with bot!",
     };
   }
-
-  const prod = Deno.env.get("PROD");
-  const frontend = prod
-    ? "https://chess-discord.vercel.app/"
-    : "http://localhost:5173/";
-  const backend = prod
-    ? "https://chess-backend.deno.dev/"
-    : "http://localhost:3000/";
+  const frontend = Deno.env.get("FRONT_END_URL")!;
+  const backend = Deno.env.get("BACK_END_URL")!;
 
   const userId = interaction.member.user.id;
 

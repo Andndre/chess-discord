@@ -1,6 +1,5 @@
 import { AppCommandInteraction } from "./utils/mod.ts";
 import { ping, playWith } from "./slash/mod.ts";
-import "std/dotenv/load.ts";
 import nacl from "cdn:tweetnacl";
 import { json, serve, validateRequest } from "x:shift";
 import {
@@ -8,9 +7,12 @@ import {
   InteractionType,
   MessageComponent,
 } from "./utils/interactions.ts";
+import "std/dotenv/load.ts";
 
 serve({
   "/interactions": interactions,
+}, {
+  port: parseInt(Deno.env.get("PORT") || "3000"),
 });
 
 async function interactions(request: Request) {

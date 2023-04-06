@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "serve": "https://deno.land/std@0.166.0/http/server.ts",
-    "socket.io": "https://deno.land/x/socket_io@0.2.0/mod.ts",
-    "oak": "https://deno.land/x/oak@v11.1.0/mod.ts",
-    "dotenv/": "https://deno.land/std@0.180.0/dotenv/"
-  }
-}
