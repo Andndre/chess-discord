@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { broadcast, games } from "../socket-events";
+import crypto from "crypto";
 
 export default (_req: Request, res: Response) => {
   const whiteId = crypto.randomUUID();
