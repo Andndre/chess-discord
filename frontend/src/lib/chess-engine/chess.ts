@@ -142,8 +142,6 @@ export default class Chess {
       this.selectedOffset = -1;
       return "move";
     }
-    // deselect
-    this.selectedOffset = -1;
 
     return "deselect";
   }

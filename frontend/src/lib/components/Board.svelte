@@ -7,6 +7,8 @@
   export let chess: Chess;
   export let flip: boolean;
 
+  let dragOverOffset = -1;
+
   $: boardOffsets = flip
     ? Rendering.twoDimensionalOffsetFlipped
     : Rendering.twoDimensionalOffset;
@@ -50,7 +52,9 @@
           {:else}
             <button
               type="button"
-              on:click={() => {
+              draggable
+              on:mousedown={(e) => {
+                console.log("clicking");
                 if (chess.clickTile(offset) === "move") {
                   if (chess.isPromote()) {
                     promoteOffset = offset;
@@ -60,6 +64,24 @@
                 }
                 chess = chess;
               }}
+              on:dragend={(_e) => {
+                console.log("mouse up");
+                if (chess.board[dragOverOffset].color === chess.current) return;
+                if (chess.clickTile(dragOverOffset) === "move") {
+                  if (chess.isPromote()) {
+                    promoteOffset = dragOverOffset;
+                  } else {
+                    chess.next();
+                  }
+                }
+                chess = chess;
+              }}
+              on:dragover={(e) => {
+                e.preventDefault();
+                console.log("dragged over to " + offset);
+
+                dragOverOffset = offset;
+              }}
               class="cell"
               style="background: {Rendering.getTileBackgroundColor(offset)};"
             >
@@ -68,6 +90,7 @@
                 style="background: {Rendering.getOverlayColor(offset, chess)};"
               >
                 {#if chess.board[offset].type !== PieceType.NONE}
+                  <!-- Make it draggable -->
                   <img
                     src="/{chess.board[offset].type}{chess.board[offset]
                       .color}.png"
@@ -138,5 +161,9 @@
   .cell .overlay {
     width: 100%;
     height: 100%;
+  }
+
+  .cell img {
+    cursor: grab;
   }
 </style>
