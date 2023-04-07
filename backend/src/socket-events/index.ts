@@ -6,7 +6,7 @@ import { Game } from "./interfaces";
 export const games = new Map<string, Game>();
 export const connections = new Map<string, string>();
 
-export function broadcast(
+export function broadcastTo(
   wss: (Socket | undefined)[],
   event: Events,
   ...args: any[]

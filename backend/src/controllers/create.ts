@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { broadcast, games } from "../socket-events";
+import { broadcastTo, games } from "../socket-events";
 import crypto from "crypto";
 
 export default (_req: Request, res: Response) => {
@@ -27,7 +27,7 @@ export default (_req: Request, res: Response) => {
     () => {
       const game = games.get(gameId);
       if (!game) return;
-      broadcast(game.watchers, "playerLeave");
+      broadcastTo(game.watchers, "playerLeave");
       if (!game.black.ws && !game.white.ws) {
         games.delete(gameId);
         console.log("closing game (" + gameId + ") due to inactivity");

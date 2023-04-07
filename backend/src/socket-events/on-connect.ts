@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { Events, Role } from "./ws-types";
-import { broadcast as broadcastTo, connections, games } from ".";
+import { broadcastTo, connections, games } from ".";
 import { Move } from "./interfaces";
 
 export function onConnect(socket: Socket) {
@@ -96,7 +96,6 @@ export function onConnect(socket: Socket) {
     if (!gameId) return; // TODO:
     const game = games.get(gameId);
     if (!game) return; // TODO:
-    // TODO: save to a database here
     broadcastTo(
       [...game.watchers, game.black.ws, game.white.ws],
       "gameOver",
@@ -147,8 +146,8 @@ export function onConnect(socket: Socket) {
     console.log(`socket ${socket.id} disconnected due to ${reason}`);
 
     const gameId = connections.get(socket.id);
+    connections.delete(socket.id);
     if (gameId) {
-      connections.delete(socket.id);
       const game = games.get(gameId);
       if (game) {
         if (
@@ -169,6 +168,7 @@ export function onConnect(socket: Socket) {
             // disconnect all watchers from the game
             game.watchers.forEach((w) => {
               w.disconnect(true);
+              connections.delete(w.id);
             });
           }
 
