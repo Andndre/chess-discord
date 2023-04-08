@@ -1,7 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Signika:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bowlby+One+SC&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #524330;
+  --background: #232323;
   font-family: "Signika", sans-serif;
 }
 
@@ -13,12 +18,36 @@
   padding: 0;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Bowlby One SC", cursive;
+}
+
+h1 {
+  @apply text-4xl;
+}
+
+h2 {
+  @apply text-2xl;
+}
+
+h3 {
+  @apply text-xl;
+}
+
+h4 {
+  @apply text-lg;
+}
+
 html {
+  color: rgb(234, 234, 234);
   background: var(--background);
 }
 
 .board-full {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+  @apply h-screen flex flex-col;
 }

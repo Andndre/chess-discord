@@ -10,5 +10,7 @@ export type Events =
   | "connection"
   | "move"
   | "gameOver"
-  | "uploadMove";
+  | "uploadMove"
+  | "blackOnline"
+  | "whiteOnline";
 export type Role = "watching" | "black" | "white";

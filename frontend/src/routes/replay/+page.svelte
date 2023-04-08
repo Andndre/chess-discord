@@ -7,21 +7,22 @@
   import Chess from "$lib/chess-engine/chess";
   import { Arrays } from "$lib/chess-engine/utils";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
+
+  import { browser } from "$app/environment";
 
   export let data: PageData;
   let chess = new Chess({
     freezeOn: [PieceColor.BLACK, PieceColor.WHITE],
   });
 
-  onMount(() => {
-    if (!data.gameId) {
-      goto("/404");
-    }
-  });
+  if (browser && (!data.gameId || !data.compiledGame)) {
+    goto("/404");
+  }
 
   let history: Move[] = [];
-  const moveCount = loadGameFromCompiledString(data.compiledGame!);
+  const moveCount = data.compiledGame
+    ? loadGameFromCompiledString(data.compiledGame!)
+    : 0;
   let currentIndex = moveCount;
 
   function loadGameFromCompiledString(compiledString: string) {

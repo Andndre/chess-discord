@@ -15,7 +15,6 @@ export interface Move {
 export interface Game {
   white: Player;
   black: Player;
-  watchKey: string;
   watchers: Socket[];
   moves: Move[];
 }

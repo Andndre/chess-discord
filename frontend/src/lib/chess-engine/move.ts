@@ -379,10 +379,6 @@ export namespace Moves {
     return moves;
   }
 
-  // function makeTestMove(realBoard: Board, move: Move) {
-  //   const board = ChessBoards.copy(realBoard);
-  // }
-
   export function generateMoves(chess: Chess) {
     const moves: Move[][] = [];
     const kingIndex = ChessBoards.getKingIndex(chess.board, chess.current);

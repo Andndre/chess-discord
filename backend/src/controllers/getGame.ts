@@ -17,7 +17,5 @@ export default async (req: Request, res: Response) => {
     compiledGame: string;
   };
 
-  console.log(game);
-
   res.send(game);
 };

@@ -39,78 +39,68 @@ export const playWith: SlashCommandHandler = async (
   const userId = interaction.member.user.id;
 
   const response = await fetch(`${backend}create`, {
-    method: "GET",
+    method: "POST",
     headers: {
       "api-Key": Deno.env.get("MY_SECRET") || "",
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      whiteId: userId,
+      blackId: taggedId,
+    }),
   });
 
   const game = await response.json() as {
     gameId: string;
-    whiteId: string;
-    blackId: string;
-    watchKey: string;
   };
 
-  const baseUrl = `${frontend}online?gameId=${game.gameId}&roleKey=`;
-  const watchUrl = baseUrl + game.watchKey;
-  const whiteUrl = baseUrl + game.whiteId;
-  const blackUrl = baseUrl + game.blackId;
-
-  const playerMessage =
-    "Hello, here is your game link (do not share it with anyone before you clicked it): ";
-
-  Promise.all([
-    sendDM(userId, playerMessage + whiteUrl),
-    sendDM(taggedId, playerMessage + blackUrl),
-  ]);
+  const gameUrl = `${frontend}online?gameId=${game.gameId}`;
 
   return {
     content: `<@${userId}> vs <@${taggedId}>`,
     components: [
       createActionRow([
         createButton(
-          "Go watch!",
+          "Lets Go!",
           ButtonStyleTypes.LINK,
-          watchUrl,
+          gameUrl,
         ),
       ]),
     ],
   };
 };
 
-async function sendDM(recipient_id: string, content: string) {
-  const options = {
-    method: "POST",
-    headers: {
-      "Authorization": `Bot ${Deno.env.get("TOKEN") || ""}`,
-      "Content-Type": "application/json",
-    },
-  };
-  const channelResponse = await fetch(
-    `${discordAPI}users/@me/channels`,
-    {
-      ...options,
-      body: JSON.stringify({
-        recipient_id,
-      }),
-    },
-  );
+// async function sendDM(recipient_id: string, content: string) {
+//   const options = {
+//     method: "POST",
+//     headers: {
+//       "Authorization": `Bot ${Deno.env.get("TOKEN") || ""}`,
+//       "Content-Type": "application/json",
+//     },
+//   };
+//   const channelResponse = await fetch(
+//     `${discordAPI}users/@me/channels`,
+//     {
+//       ...options,
+//       body: JSON.stringify({
+//         recipient_id,
+//       }),
+//     },
+//   );
 
-  if (!channelResponse.ok) return false;
+//   if (!channelResponse.ok) return false;
 
-  const channel = await channelResponse.json();
+//   const channel = await channelResponse.json();
 
-  const dirrectMessage = await fetch(
-    `${discordAPI}channels/${channel.id}/messages`,
-    {
-      ...options,
-      body: JSON.stringify({
-        content,
-      }),
-    },
-  );
+//   const dirrectMessage = await fetch(
+//     `${discordAPI}channels/${channel.id}/messages`,
+//     {
+//       ...options,
+//       body: JSON.stringify({
+//         content,
+//       }),
+//     },
+//   );
 
-  return dirrectMessage.ok;
-}
+//   return dirrectMessage.ok;
+// }

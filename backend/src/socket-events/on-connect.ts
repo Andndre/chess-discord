@@ -1,85 +1,91 @@
 import { Socket } from "socket.io";
 import { Events, Role } from "./ws-types";
 import { broadcastTo, connections, games } from ".";
-import { Move } from "./interfaces";
+import { Game, Move } from "./interfaces";
 
 export function onConnect(socket: Socket) {
   console.log(`socket ${socket.id} connected`);
 
   socket.emit<Events>("connection", "Hello from server");
 
-  socket.on<Events>("joinRoom", async (roleKey: string, gameId: string) => {
-    const game = games.get(gameId);
+  socket.on<Events>(
+    "joinRoom",
+    async (role: "black" | "white" | "watching", gameId: string) => {
+      const game = games.get(gameId);
 
-    if (!game) {
-      socket.emit("error", "game-not-found");
-      socket.disconnect(true);
-      return;
-    }
+      if (!game) {
+        socket.emit("error", "game-not-found");
+        socket.disconnect(true);
+        return;
+      }
 
-    let res_role: Role | "" = "";
-    switch (roleKey) {
-      case game.watchKey:
-        res_role = "watching";
-        broadcastTo(game.watchers, "watcherJoin");
-        game.watchers.push(socket);
-        broadcastTo([game.white.ws, game.black.ws], "watcherJoin");
-        connections.set(socket.id, gameId);
-        break;
-      case game.black.id:
-        res_role = "black";
-        if (game.black.ws != undefined) {
-          socket.emit<Events>(
-            "error",
-            "link-already-clicked",
-          );
-          socket.disconnect(true);
-          return;
-        }
-        connections.set(socket.id, gameId);
-        if (game.white.ws) {
-          broadcastTo([...game.watchers, game.white.ws], "start");
-        }
-        game.black.ws = socket;
-        break;
-      case game.white.id:
-        res_role = "white";
-        if (game.white.ws != undefined) {
-          socket.emit<Events>(
-            "error",
-            "link-already-clicked",
-          );
-          socket.disconnect(true);
-          return;
-        }
-        connections.set(socket.id, gameId);
-        if (game.black.ws) {
-          broadcastTo([...game.watchers, game.black.ws], "start");
-        }
-        game.white.ws = socket;
-        break;
-    }
+      switch (role) {
+        case "watching":
+          broadcastTo(game.watchers, "watcherJoin");
+          game.watchers.push(socket);
+          broadcastTo([game.white.ws, game.black.ws], "watcherJoin");
+          connections.set(socket.id, gameId);
+          break;
+        case "black":
+          if (game.black.ws != undefined) {
+            // rejoin
+            connections.delete(game.black.ws.id);
+            game.black.ws = socket;
+            connections.set(socket.id, gameId);
 
-    const waiting = !game.white.ws || !game.black.ws;
+            broadcastTo(
+              [game.white.ws, ...game.watchers],
+              "blackOnline",
+            );
+          }
+          connections.set(socket.id, gameId);
+          game.black.ws = socket;
+          if (game.white.ws) {
+            broadcastTo([...game.watchers, game.white.ws], "start");
+          }
+          break;
+        case "white":
+          if (game.white.ws != undefined) {
+            // rejoin
+            connections.delete(game.white.ws.id);
+            game.white.ws = socket;
+            connections.set(socket.id, gameId);
 
-    socket.emit<Events>(
-      "connectToGame",
-      res_role,
-      game.moves,
-      game.watchers.length,
-      waiting,
-    );
+            broadcastTo(
+              [game.black.ws, ...game.watchers],
+              "whiteOnline",
+            );
+          }
 
-    if (!waiting) {
-      socket.emit<Events>("start");
-    }
-  });
+          connections.set(socket.id, gameId);
+          game.white.ws = socket;
+          if (game.black.ws) {
+            broadcastTo([...game.watchers, game.black.ws], "start");
+          }
+          break;
+      }
+
+      const waiting = !game.white.ws || !game.black.ws;
+
+      socket.emit<Events>(
+        "connectToGame",
+        role,
+        game.moves,
+        game.watchers.length,
+        waiting,
+      );
+
+      if (!waiting) {
+        socket.emit<Events>("start");
+      }
+    },
+  );
 
   socket.on<Events>("move", (move: Move) => {
     const gameId = connections.get(socket.id);
-    if (!gameId) return; // TODO:
+    if (!gameId) return;
     const game = games.get(gameId);
-    if (!game) return; // TODO:
+    if (!game) return;
 
     game.moves.push(move);
 
@@ -107,85 +113,97 @@ export function onConnect(socket: Socket) {
     "uploadMove",
     (gameId: string, compiledGame: string) => {
       const game = games.get(gameId);
-      if (!game) return; // TODO:
-
-      console.log("Saving Moves: " + compiledGame);
-
-      console.log(process.env.SUPABASE_URL);
-
-      fetch(process.env.SUPABASE_URL! + "/rest/v1/game", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.SUPABASE_KEY!}`,
-          "apiKey": process.env.SUPABASE_KEY!,
-        },
-        body: JSON.stringify([{
-          gameId,
-          compiledGame,
-        }]),
-      });
-
-      for (const ws of game.watchers) {
-        ws.disconnect(true);
-        connections.delete(ws.id);
-      }
-      game.black.ws?.disconnect(true);
-      game.white.ws?.disconnect(true);
-      if (game.black.ws) {
-        connections.delete(game.black.ws?.id);
-      }
-      if (game.white.ws) {
-        connections.delete(game.white.ws?.id);
-      }
-      games.delete(gameId);
+      if (!game) return;
+      uploadMove(gameId, compiledGame);
+      deleteGame(game, gameId);
     },
   );
 
   socket.on("disconnect", (reason) => {
     console.log(`socket ${socket.id} disconnected due to ${reason}`);
+    connections.delete(socket.id);
 
     const gameId = connections.get(socket.id);
-    connections.delete(socket.id);
-    if (gameId) {
-      const game = games.get(gameId);
-      if (game) {
-        if (
-          game.black.ws?.id === socket.id || game.white.ws?.id === socket.id
-        ) {
-          // getting enemys websocket
-          const enemy = game.white.ws?.id === socket.id
-            ? game.black.ws
-            : game.white.ws;
-          // if the enemy logged out
-          if (enemy) {
-            // broadcast to all watchers
-            broadcastTo(
-              [...game.watchers, enemy],
-              "playerLeave",
-              game.black.ws?.id === socket.id ? "black" : "white",
-            );
-            // disconnect all watchers from the game
-            game.watchers.forEach((w) => {
-              w.disconnect(true);
-              connections.delete(w.id);
-            });
-          }
+    if (!gameId) return;
 
-          games.delete(gameId);
-        } else {
-          // on watcher leave
-          const index = game.watchers.indexOf(socket);
-          if (index !== -1) {
-            // on watcher leave
-            game.watchers.splice(index, 1);
-            broadcastTo(
-              [game.black.ws, game.white.ws, ...game.watchers],
-              "watcherLeave",
-            );
-          }
-        }
+    const game = games.get(gameId);
+    if (game) {
+      if (
+        game.black.ws?.id === socket.id || game.white.ws?.id === socket.id
+      ) {
+        playerLeave(socket, game, gameId);
+      } else {
+        watcherLeave(socket, game);
       }
     }
+  });
+}
+
+function deleteGame(game: Game, gameId: string) {
+  for (const ws of game.watchers) {
+    ws.disconnect(true);
+    connections.delete(ws.id);
+  }
+
+  game.black.ws?.disconnect(true);
+  game.white.ws?.disconnect(true);
+
+  if (game.black.ws) {
+    connections.delete(game.black.ws?.id);
+  }
+  if (game.white.ws) {
+    connections.delete(game.white.ws?.id);
+  }
+  games.delete(gameId);
+}
+
+function getEnemyWS(socket: Socket, game: Game) {
+  return game.white.ws?.id === socket.id ? game.black.ws : game.white.ws;
+}
+
+function playerLeave(socket: Socket, game: Game, gameId: string) {
+  const enemy = getEnemyWS(socket, game);
+
+  broadcastTo(
+    [...game.watchers, enemy],
+    "playerLeave",
+    game.black.ws?.id === socket.id ? "black" : "white",
+  );
+
+  if (enemy) {
+    setTimeout(() => {
+      const current = getEnemyWS(enemy, game);
+      if (!current) {
+        broadcastTo([...game.watchers, enemy], "error", "player-leave");
+        deleteGame(game, gameId);
+        return;
+      }
+    }, 1000 * 15); // 15 seconds
+  }
+}
+
+function watcherLeave(socket: Socket, game: Game) {
+  const index = game.watchers.findIndex((w) => w.id === socket.id);
+  if (index === -1) return;
+
+  game.watchers.splice(index, 1);
+  broadcastTo(
+    [game.black.ws, game.white.ws, ...game.watchers],
+    "watcherLeave",
+  );
+}
+
+async function uploadMove(gameId: string, compiledGame: string) {
+  await fetch(process.env.SUPABASE_URL! + "/rest/v1/game", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.SUPABASE_KEY!}`,
+      "apiKey": process.env.SUPABASE_KEY!,
+    },
+    body: JSON.stringify([{
+      gameId,
+      compiledGame,
+    }]),
   });
 }

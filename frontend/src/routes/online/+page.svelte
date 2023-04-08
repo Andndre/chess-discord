@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
   import type {
     BasicMove,
     Errors,
     Events as Chess_WS_Events,
   } from "$lib/websocket/types";
+  import type { PageServerData } from "./$types";
+
   import { PUBLIC_BACK_END_URL } from "$env/static/public";
-  import type { PageData } from "./$types";
   import { Socket, io } from "socket.io-client";
   import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
 
   import Loading from "$lib/components/Loading.svelte";
   import Chess, { type GameOverReason } from "$lib/chess-engine/chess";
@@ -17,7 +18,7 @@
   type Role = "white" | "black" | "watching";
 
   // external
-  export let data: PageData;
+  export let data: PageServerData;
 
   // internal
   let connectingToWs = true;
@@ -47,10 +48,10 @@
   $: loading = waitingForPlayer || connectingToWs;
   $: flip = role === "black";
   $: {
-    if (!data.gameId || !data.roleKey) {
+    if (!data.gameId || !data.role) {
       waitingForPlayer = false;
       connectingToWs = false;
-      errorMessage = "Invalid game ID or role KEY!";
+      errorMessage = "Invalid game ID";
       lightenBg = false;
     }
   }
@@ -66,8 +67,8 @@
     socket.on<Chess_WS_Events>("connection", (_welcome) => {
       connectingToWs = false;
       loadingMessage = "Waiting for player to join...";
-      if (!data.roleKey || !data.gameId) return;
-      socket!.emit<Chess_WS_Events>("joinRoom", data.roleKey, data.gameId);
+      if (!data.role || !data.gameId) return;
+      socket!.emit<Chess_WS_Events>("joinRoom", data.role, data.gameId);
     });
 
     socket.on<Chess_WS_Events>(
@@ -235,6 +236,7 @@
     top: 1rem;
     left: 1rem;
     background: rgb(236, 235, 233);
+    color: black;
     border-radius: 0.1rem;
     overflow-x: hidden;
     height: 2rem;

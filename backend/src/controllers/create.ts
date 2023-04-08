@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import { broadcastTo, games } from "../socket-events";
 import crypto from "crypto";
 
-export default (_req: Request, res: Response) => {
-  const whiteId = crypto.randomUUID();
-  const blackId = crypto.randomUUID();
+export default (req: Request, res: Response) => {
   const gameId = crypto.randomUUID();
-  const watchKey = crypto.randomUUID();
+  const { whiteId, blackId } = req.body as {
+    whiteId: string;
+    blackId: string;
+  };
 
   games.set(gameId, {
     white: {
@@ -15,12 +16,9 @@ export default (_req: Request, res: Response) => {
     black: {
       id: blackId,
     },
-    watchKey: watchKey,
     watchers: [],
     moves: [],
   });
-
-  console.log("game set");
 
   // delete game when no one is playing the game in 3 minutes
   setTimeout(
@@ -41,6 +39,5 @@ export default (_req: Request, res: Response) => {
     gameId,
     whiteId,
     blackId,
-    watchKey,
   });
 };

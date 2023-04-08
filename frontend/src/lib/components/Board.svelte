@@ -21,7 +21,7 @@
   ];
 </script>
 
-<div class="container">
+<div class="chess-container">
   <div class="board">
     {#each boardOffsets as row}
       <div class="row">
@@ -102,7 +102,7 @@
 </div>
 
 <style>
-  .container {
+  .chess-container {
     display: flex;
     align-items: center;
     justify-content: center;
