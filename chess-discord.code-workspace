@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "backend"
+		},
+		{
+			"path": "discord-bot"
+		},
+		{
+			"path": "frontend"
+		}
+	],
+	"settings": {}
+}
